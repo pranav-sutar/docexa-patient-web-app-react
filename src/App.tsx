@@ -3,8 +3,12 @@ import "./App.css";
 import { API_BASE_URL } from "./config/apis";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+// import { useLoader } from "./context/LoaderContext";
+import Loader from "./components/Loader";
 
 function App() {
+  // const { loading } = useLoader();
   const [selectedClinicId, setSelectedClinicId] = useState<number | "">("");
   const [clinicData, setClinicData] = useState<any[]>([]);
   const [selectedClinic, setSelectedClinic] = useState<any>(null);
@@ -40,6 +44,8 @@ function App() {
 
   return (
     <div className="app">
+      {/* {loading && <Loader />} */}
+      <Toaster position="top-right" />
       <div className="container">
         <h1 className="title">Patient Portal</h1>
 
