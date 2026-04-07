@@ -120,11 +120,16 @@ function Mainpage() {
         app_id: JSON.parse(localStorage.getItem("app_id") || "null"),
         mobile_no: mobile,
       })
-      .then((res) => {
+      .then((res: any) => {
         console.log("Booked Patient Data:", res.data);
 
         if (res.data.code === 200) {
           setAppointments(res.data.data || []);
+          console.log(res);
+
+          if (res.data.message === "Data not found") {
+            toast.error("No appointments found for this mobile number");
+          }
         } else {
           toast.error("No appointments found");
         }
@@ -211,6 +216,18 @@ function Mainpage() {
     navigate("/queue");
   }
   // % -- Get Patient Queue -- (B)
+
+  // # -- Add Vitals -- (T)
+  function addVitals(item: any) {
+    console.log(item);
+
+    navigate("/add-vitals", {
+      state: {
+        appointment_data: item,
+      },
+    });
+  }
+  // # -- Add Vitals -- (B)
 
   // y ===== Functions -- (B)
 
@@ -341,8 +358,13 @@ function Mainpage() {
                       Check In
                     </button>
                   ) : (
-                    <button className="bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium">
-                      Checked In
+                    <button
+                      onClick={() => {
+                        addVitals(item);
+                      }}
+                      className="bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium"
+                    >
+                      Add Vitals
                     </button>
                   )}
                 </div>
