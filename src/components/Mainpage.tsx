@@ -12,7 +12,8 @@ import Loader from "./Loader";
 import male_icon from "../assets/icons/gender/male.png";
 import female_icon from "../assets/icons/gender/female.png";
 import Swal from "sweetalert2";
-
+import { useCache } from "../context/CacheContext";
+import back_button from "../assets/icons/back-btn.png";
 function Mainpage() {
   const { id } = useParams();
   const [clinicData, setClinicData] = useState<any>(null);
@@ -20,7 +21,9 @@ function Mainpage() {
   const [mobile, setMobile] = useState("");
   const { loading } = useLoader();
   const { showLoader, hideLoader } = useLoader();
-  const [appointments, setAppointments] = useState<any[]>([]);
+
+  // const [appointments, setAppointments] = useState<any[]>([]);
+  const { appointments, setAppointments } = useCache();
   const navigate = useNavigate();
   // y ===== Functions -- (T)
   function getClinicById() {
@@ -104,6 +107,7 @@ function Mainpage() {
       return;
     }
     if (isPatientInClinic) {
+      localStorage.setItem("patient_mobile", mobile);
       getBookedPatient(mobile);
     }
   }
@@ -168,7 +172,18 @@ function Mainpage() {
       );
 
       if (res.data.status) {
-        await LoadPatentList(); // ✅ now works properly
+        // await LoadPatentList(); // ✅ now works properly
+        const patient_mobile = localStorage.getItem("patient_mobile");
+        if (!patient_mobile) {
+          toast.error(
+            "Please re-enter your mobile number to view appointment status!",
+          );
+          return;
+        }
+        if (patient_mobile) {
+          // localStorage.setItem("patient_mobile", JSON.stringify(mobile));
+          getBookedPatient(patient_mobile);
+        }
         toast.success("Patient checked in successfully");
       } else {
         toast.error(res.data.message || "Check-in failed");
@@ -191,6 +206,8 @@ function Mainpage() {
     //   .then((res) => {
     //     console.log("Queue Data:", res.data);
     //   });
+    // console.log("appointment on caches: ", appointments);
+
     navigate("/queue");
   }
   // % -- Get Patient Queue -- (B)
@@ -207,8 +224,10 @@ function Mainpage() {
       {loading && <Loader />}
       <div className="outer-container flex flex-col">
         <Toaster />
+
         <div className="min-h-[90vh] bg-gray-100  flex flex-col items-center">
           {/* HEADER */}
+
           <div className="w-full bg-blue-200 rounded-b-[60px] pt-10 p-6 text-center relative">
             <span className="text-gray-600">Welcome to</span>
             <h2 className="text-3xl font-bold text-gray-800">
@@ -279,7 +298,7 @@ function Mainpage() {
                 Booked Appointments
               </h3>
 
-              {appointments.map((item, index) => (
+              {appointments.map((item: any, index: any) => (
                 <div
                   key={index}
                   className="flex items-center justify-between border rounded-xl p-3 mb-3 shadow-md bg-white"
