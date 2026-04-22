@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 // import { useLoader } from "./context/LoaderContext";
 import Loader from "./components/Loader";
-
+import { QRCodeCanvas } from "qrcode.react";
 function App() {
   // const { loading } = useLoader();
   const [selectedClinicId, setSelectedClinicId] = useState<number | "">("");
@@ -41,6 +41,9 @@ function App() {
       navigate(`/mainpage/${selectedClinic.id}`);
     }
   }
+  const qrUrl = selectedClinicId
+    ? `http://192.168.1.72:3000/mainpage/${selectedClinicId}`
+    : "";
 
   return (
     <div className="app">
@@ -89,6 +92,20 @@ function App() {
               <p>
                 <b>🌐 Website:</b> {selectedClinic.website || "N/A"}
               </p>
+              {/* show RQ here */}
+              {qrUrl && (
+                <div className="mt-4 flex flex-col items-center">
+                  <p className="text-sm text-gray-600 mb-2">
+                    Scan to access clinic
+                  </p>
+
+                  <QRCodeCanvas value={qrUrl} size={180} />
+
+                  <p className="text-xs mt-2 text-gray-500 break-all">
+                    {qrUrl}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}

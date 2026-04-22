@@ -21,6 +21,7 @@ function Mainpage() {
   const [mobile, setMobile] = useState("");
   const { loading } = useLoader();
   const { showLoader, hideLoader } = useLoader();
+  const [unBookedAllPatients, setUnBookedAllPatients] = useState<any>([]);
 
   // const [appointments, setAppointments] = useState<any[]>([]);
   const { appointments, setAppointments } = useCache();
@@ -113,7 +114,7 @@ function Mainpage() {
   }
   function getBookedPatient(mobile: any) {
     showLoader();
-
+    getAllPatients(mobile);
     axios
       .post(`${API_BASE_URL}/patient/dashboard/appointments`, {
         patient_id: 0,
@@ -142,6 +143,31 @@ function Mainpage() {
       });
   }
 
+  function getAllPatients(mobile: any) {
+    try {
+      const app_id = localStorage.getItem("app_id");
+      const doctor_id = localStorage.getItem("doctor_id");
+      const mobile_no = localStorage.getItem("mobile_no") || mobile;
+      const user_map_id = localStorage.getItem("user_map_id");
+      const config = {
+        headers: {
+          "app-id": app_id,
+          "doctor-id": doctor_id,
+          "mobile-no": mobile_no,
+          "created-by-doctor": user_map_id,
+        },
+      };
+      axios
+        .get(`${API_BASE_URL}/patient/dashboard/patients`, config)
+        .then((res) => {
+          console.log("patients: ", res.data);
+          setUnBookedAllPatients(res?.data?.patients || []);
+        });
+    } catch (e) {
+      toast.error("something went wrong to get patient list.");
+    }
+  }
+
   function formatTime(time: string) {
     return time?.slice(0, 5); // 12:30:00 → 12:30
   }
@@ -165,7 +191,16 @@ function Mainpage() {
     if (!result.isConfirmed) return;
 
     try {
-      showLoader();
+      // showLoader();
+      Swal.fire({
+        title: "Checking in...",
+        text: "Please wait",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
       const res = await axios.post(
         `${API_BASE_URL}/patient-web/check_in_patient`,
         {
@@ -189,15 +224,106 @@ function Mainpage() {
           // localStorage.setItem("patient_mobile", JSON.stringify(mobile));
           getBookedPatient(patient_mobile);
         }
-        toast.success("Patient checked in successfully");
+        const queueData = await getQueAndNumber();
+
+        const activeQueue = queueData.filter((q: any) => q.checked_in === 1);
+
+        // find current patient
+        const currentPatient = activeQueue.find(
+          (q: any) => q.appt_id === item.appt_id,
+        );
+
+        // index-based position
+        const myIndex = activeQueue.findIndex(
+          (q: any) => q.appt_id === item.appt_id,
+        );
+
+        const myPosition = myIndex !== -1 ? myIndex + 1 : "N/A";
+        const peopleAhead = myIndex !== -1 ? myIndex : 0;
+
+        // 🔥 NEW ALERT INSTEAD OF TOAST
+
+        const result = await Swal.fire({
+          html: `
+    <div style="text-align:center;">
+      
+      <h3 style="margin-bottom:10px;">Patient Checked In!</h3>
+
+      <p style="margin-bottom:15px;">Your Waiting Number is:</p>
+
+      <!-- BIG CIRCLE -->
+      <div style="
+        width:90px;
+        height:90px;
+        border-radius:50%;
+        background: linear-gradient(135deg, #4facfe, #00f2fe);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-size:28px;
+        color:white;
+        font-weight:bold;
+        margin: 0 auto 15px auto;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      ">
+        ${myPosition}
+      </div>
+
+      <div style="font-size:14px; color:#555; margin-bottom:10px;">
+        🧾 Token Number: <b>${currentPatient?.queue_number}</b><br/>
+        👥 People Ahead: <b>${peopleAhead}</b>
+      </div>
+
+      <p style="margin-top:10px;">Do you want to add vitals?</p>
+
+    </div>
+  `,
+          icon: "success",
+          showCancelButton: true,
+          confirmButtonText: "Add Vitals",
+          cancelButtonText: "Skip for now",
+          buttonsStyling: false,
+          customClass: {
+            confirmButton: "bg-green-500 text-white px-4 py-2 rounded-lg mr-2",
+            cancelButton: "bg-red-500 text-white px-4 py-2 rounded-lg",
+          },
+        });
+
+        if (result.isConfirmed) {
+          addVitals(item); // 👈 navigate to vitals page
+        }
+        if (result.dismiss) {
+        }
       } else {
+        hideLoader();
         toast.error(res.data.message || "Check-in failed");
       }
     } catch (error) {
       console.error(error);
+      hideLoader();
+
       toast.error("Something went wrong");
     } finally {
-      hideLoader();
+    }
+  }
+  async function getQueAndNumber() {
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/patient-web/patient-queue`,
+        {
+          clinic_id: JSON.parse(localStorage.getItem("clinic_id") || "null"),
+        },
+      );
+
+      if (res.data.status) {
+        return res.data.data; // ✅ return queue list
+      } else {
+        toast.error("Failed to fetch queue");
+        return [];
+      }
+    } catch (error) {
+      toast.error("Something went wrong");
+      return [];
     }
   }
   // @ -- Check In Patient -- (B)
@@ -367,6 +493,48 @@ function Mainpage() {
                       Add Vitals
                     </button>
                   )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ===========  Patient List ============ */}
+          {unBookedAllPatients.length > 0 && (
+            <div className="w-[90%] max-w-md bg-white rounded-2xl shadow-lg p-4 mt-6 bg-[rgb(198_219_232)]">
+              <h3 className="text-gray-600 font-bold mb-3 ">Patient List</h3>
+
+              {unBookedAllPatients.map((item: any, index: any) => (
+                <div
+                  key={index}
+                  onClick={() => {
+                    console.log("Selected Patient:", item);
+                  }}
+                  className="flex items-center justify-between border rounded-xl p-3 mb-3 shadow-md bg-white cursor-pointer hover:bg-gray-50 transition"
+                >
+                  {/* LEFT */}
+                  <div className="flex items-center gap-3">
+                    {/* Avatar */}
+                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                      {item.gender === 1 ? (
+                        <img src={male_icon} alt="" />
+                      ) : (
+                        <img src={female_icon} alt="" />
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div>
+                      <h4 className="font-semibold text-gray-800 capitalize">
+                        {item.patient_name}
+                      </h4>
+
+                      <p className="text-sm text-gray-500">
+                        {getGender(item.gender)} {item.age ? item.age : ""}
+                      </p>
+
+                      <p className="text-xs text-gray-400">{item.mobile_no}</p>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

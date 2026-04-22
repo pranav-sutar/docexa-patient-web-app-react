@@ -135,36 +135,6 @@ function AddVitals({}: Props) {
           "Content-Type": "application/json",
         },
       };
-
-      // =========================
-      // ✅ 1. VITALS (only if exists)
-      // =========================
-      if (vitalsPayload.length > 0) {
-        const vitalsApiPayload = vitalsPayload.map((v: any) => ({
-          appointment_id: commonPayload.booking_id,
-          name: v.vital_name,
-          patient_id: commonPayload.patientId,
-          user_map_id: commonPayload.user_map_id,
-          unit: v.unit ?? null,
-          data: {
-            note: v.unit ?? null,
-            title: v.vital_name,
-            type: "vitals",
-            vitals: v.value,
-          },
-        }));
-
-        const vital_resonse = await axios.post(
-          `${STAGING_V3_URL}/establishments/users/${commonPayload.user_map_id}/assistant/vital/add`,
-          vitalsApiPayload,
-          config,
-        );
-
-        if (vital_resonse.data.status === true) {
-          toast.success("Vitals added successfully");
-        }
-      }
-
       // =========================
       // ✅ 2. SYMPTOMS (only if exists)
       // =========================
@@ -198,6 +168,36 @@ function AddVitals({}: Props) {
           toast.success("Symptoms added successfully");
         }
       }
+
+      // =========================
+      // ✅ 1. VITALS (only if exists)
+      // =========================
+      if (vitalsPayload.length > 0) {
+        const vitalsApiPayload = vitalsPayload.map((v: any) => ({
+          appointment_id: commonPayload.booking_id,
+          name: v.vital_name,
+          patient_id: commonPayload.patientId,
+          user_map_id: commonPayload.user_map_id,
+          unit: v.unit ?? null,
+          data: {
+            note: v.unit ?? null,
+            title: v.vital_name,
+            type: "vitals",
+            vitals: v.value,
+          },
+        }));
+
+        const vital_resonse = await axios.post(
+          `${STAGING_V3_URL}/establishments/users/${commonPayload.user_map_id}/assistant/vital/add`,
+          vitalsApiPayload,
+          config,
+        );
+
+        if (vital_resonse.data.status === true) {
+          toast.success("Vitals added successfully");
+        }
+      }
+
       navigate(-1);
       hideLoader();
       console.log("✅ Done");
