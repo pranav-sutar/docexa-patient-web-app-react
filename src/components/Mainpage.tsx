@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { API_BASE_URL, STAGING_BASE_URL } from "../config/apis";
+import { API_BASE_URL, STAGING_BASE_URL, STAGING_V3_URL } from "../config/apis";
 import { Button, Input, Switch, TextField } from "@mui/material";
 import phone_icon from "../assets/icons/phone_icon.png";
 import doctors_team_image from "../assets/pngs/doctors_team_icon.png";
@@ -14,6 +14,7 @@ import female_icon from "../assets/icons/gender/female.png";
 import Swal from "sweetalert2";
 import { useCache } from "../context/CacheContext";
 import back_button from "../assets/icons/back-btn.png";
+
 function Mainpage() {
   const { id } = useParams();
   const [clinicData, setClinicData] = useState<any>(null);
@@ -26,7 +27,12 @@ function Mainpage() {
   // const [appointments, setAppointments] = useState<any[]>([]);
   const { appointments, setAppointments } = useCache();
   const navigate = useNavigate();
+  const bookedPatientIds = new Set(
+    appointments.map((appt: any) => appt.patient_id)
+  );
+
   // y ===== Functions -- (T)
+  // g -- Get Clinic By ID and store data into Local Storage
   function getClinicById() {
     showLoader();
     axios
@@ -38,11 +44,11 @@ function Mainpage() {
           localStorage.setItem("clinic_id", JSON.stringify(res.data.data.id));
           localStorage.setItem(
             "user_map_id",
-            JSON.stringify(res.data.data?.user_map_id),
+            JSON.stringify(res.data.data?.user_map_id)
           );
           localStorage.setItem(
             "clinic_name",
-            JSON.stringify(res.data.data?.clinic_name),
+            JSON.stringify(res.data.data?.clinic_name)
           );
           getAllDoctorData(res.data.data?.user_map_id);
         } else {
@@ -58,6 +64,7 @@ function Mainpage() {
       });
   }
 
+  // g -- Get Doctor Data on User Map ID
   function getAllDoctorData(user_map_id: any) {
     axios
       .post(`${API_BASE_URL}/patient-web/doctor_data_on_user_map_id`, {
@@ -67,17 +74,19 @@ function Mainpage() {
         console.log("Doctor Data:", res.data);
         localStorage.setItem(
           "pharmaclient_id",
-          JSON.stringify(res?.data?.data?.[0].pharmaclient_id),
+          JSON.stringify(res?.data?.data?.[0].pharmaclient_id)
         );
+        getSKUDetails();
         // console.log("app id: ", res?.data.data?.[0]?.app_id);
 
         localStorage.setItem(
           "app_id",
-          JSON.stringify(res?.data.data?.[0]?.app_id),
+          JSON.stringify(res?.data.data?.[0]?.app_id)
         );
       });
   }
 
+  // g -- Toggle for In clinic or not
   function onToggleResponse(e: any) {
     console.log("Toggle State:", e.target.checked);
     setIsPatientInClinic(e.target.checked);
@@ -101,7 +110,7 @@ function Mainpage() {
       });
     }
   }
-
+  //  g -- on GO load patient list and booked patients
   async function LoadPatentList() {
     if (mobile.length !== 10) {
       toast.error("Please enter a valid 10-digit mobile number");
@@ -112,9 +121,10 @@ function Mainpage() {
       getBookedPatient(mobile);
     }
   }
+  // g -- Get Booked Patients
   function getBookedPatient(mobile: any) {
     showLoader();
-    getAllPatients(mobile);
+
     axios
       .post(`${API_BASE_URL}/patient/dashboard/appointments`, {
         patient_id: 0,
@@ -125,9 +135,13 @@ function Mainpage() {
         console.log("Booked Patient Data:", res.data);
 
         if (res.data.code === 200) {
-          setAppointments(res.data.data || []);
+          const clinicId = Number(localStorage.getItem("clinic_id"));
+          const filteredData = (res.data.data || []).filter(
+            (item: any) => Number(item.clinic_id) === clinicId
+          );
+          setAppointments(filteredData);
           console.log(res);
-
+          getAllPatients(mobile, filteredData);
           if (res.data.message === "Data not found") {
             toast.error("No appointments found for this mobile number");
           }
@@ -143,7 +157,8 @@ function Mainpage() {
       });
   }
 
-  function getAllPatients(mobile: any) {
+  // g -- Get All Patients
+  function getAllPatients(mobile: any, bookedAppointments: any[]) {
     try {
       const app_id = localStorage.getItem("app_id");
       const doctor_id = localStorage.getItem("doctor_id");
@@ -161,35 +176,126 @@ function Mainpage() {
         .get(`${API_BASE_URL}/patient/dashboard/patients`, config)
         .then((res) => {
           console.log("patients: ", res.data);
-          setUnBookedAllPatients(res?.data?.patients || []);
+          const patients = res?.data?.patients || [];
+          const bookedIds = new Set(
+            bookedAppointments.map((appt: any) => Number(appt.patient_id))
+          );
+          const filteredPatients = patients.filter(
+            (patient: any) => !bookedIds.has(Number(patient.patient_id))
+          );
+
+          setUnBookedAllPatients(filteredPatients);
         });
-    } catch (e) {
-      toast.error("something went wrong to get patient list.");
+    } catch (e: any) {
+      toast.error("something went wrong to get patient list.", e);
+    }
+  }
+  // g -- Book Appointment and Check In
+  async function bookAndCheckIn(item: any) {
+    showLoader();
+    console.log("data: ", item);
+    const today = new Date().toISOString().split("T")[0];
+
+    // instead creating new api for book, we have used walkIn appointment frm website --
+    try {
+      // get slots for respected clinic
+      const slotsData = await getSlots();
+      // g -- assign current slot from slots and pass to payload
+      const currentSlot = getCurrentSlot(slotsData?.slot || []);
+      console.log("Current Slot:", currentSlot);
+      const payload = {
+        age: getAge(item?.dob),
+        clinic_id: localStorage.getItem("clinic_id"),
+        email: item?.email_id ?? null,
+        gender: item.gender,
+        patient_mobile_no: item.mobile_no,
+        patient_name: item.patient_name,
+        payment_mode: "direct",
+        schedule_date: today,
+        schedule_remark: "",
+        schedule_time: currentSlot,
+        sku_id: localStorage.getItem("sku_id"),
+        user_map_id: localStorage.getItem("user_map_id"),
+        patient_id: item?.patient_id,
+        vitals: [],
+      };
+      console.log("payload: ", payload);
+
+      axios
+        .post(STAGING_V3_URL + `/appointment/createForWalkIn`, payload)
+        .then((res) => {
+          console.log(res);
+          if (res.data.status == "success" && res.status == 200) {
+            const patient_data = {
+              appt_id: res?.data?.data?.appointment_id,
+            };
+            DirectCheckInPatient(patient_data);
+            // toast("SuccessFully Booked Appointment...");
+          } else {
+            toast.error("Something Went Wrong...");
+          }
+        });
+      hideLoader();
+    } catch (error) {
+      console.error("error : ", error);
+      hideLoader();
     }
   }
 
-  function formatTime(time: string) {
-    return time?.slice(0, 5); // 12:30:00 → 12:30
+  // g -- Get SKU Details for perticular clinic
+  function getSKUDetails() {
+    console.log("calling function");
+
+    const user_map_id = localStorage.getItem("user_map_id");
+    try {
+      axios
+        .get(STAGING_V3_URL + `/establishments/users/${user_map_id}/skus`)
+        .then((res) => {
+          const clinic_id = localStorage.getItem("clinic_id");
+          const data = res.data.data || [];
+          const relatedSkus = data.filter(
+            (item: any) => String(item.clinic_id) === String(clinic_id)
+          );
+          if (relatedSkus) {
+            localStorage.setItem("sku_id", relatedSkus?.[0]?.id);
+          }
+        });
+    } catch (e) {
+      console.log("Error: ", e);
+    }
   }
 
-  function getGender(gender: number) {
-    return gender === 1 ? "Male" : "Female";
+  // g -- Get slots for perticular clinic --
+  async function getSlots() {
+    try {
+      const user_map_id = localStorage.getItem("user_map_id");
+      const clinic_id = localStorage.getItem("clinic_id");
+
+      if (!clinic_id || !user_map_id) {
+        toast.error("something went wrong.");
+        return null;
+      }
+
+      const res = await axios.get(
+        `${STAGING_V3_URL}/establishments/users/${user_map_id}/bookingslots/${clinic_id}`
+      );
+
+      const data = res.data?.data || [];
+      console.log("data : ", data);
+
+      const filteredData = data.filter(
+        (item: any) => item.day_id === getDayNumber()
+      );
+
+      return filteredData?.[0] ?? null;
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
   }
 
-  // @ -- Check In Patient -- (T)
-  async function checkInPatient(item: any) {
-    const result = await Swal.fire({
-      title: "Are you sure?",
-      text: "Do you want to check in this appointment?",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "Yes, Check In",
-      cancelButtonText: "Cancel",
-      buttonsStyling: false,
-    });
-
-    if (!result.isConfirmed) return;
-
+  // g -- Direct CheckIn On Appointment Create --
+  async function DirectCheckInPatient(item: any) {
     try {
       // showLoader();
       Swal.fire({
@@ -206,9 +312,9 @@ function Mainpage() {
         {
           booking_id: item.appt_id,
           user_map_id: JSON.parse(
-            localStorage.getItem("user_map_id") || "null",
+            localStorage.getItem("user_map_id") || "null"
           ),
-        },
+        }
       );
 
       if (res.data.status) {
@@ -216,7 +322,7 @@ function Mainpage() {
         const patient_mobile = localStorage.getItem("patient_mobile");
         if (!patient_mobile) {
           toast.error(
-            "Please re-enter your mobile number to view appointment status!",
+            "Please re-enter your mobile number to view appointment status!"
           );
           return;
         }
@@ -230,12 +336,12 @@ function Mainpage() {
 
         // find current patient
         const currentPatient = activeQueue.find(
-          (q: any) => q.appt_id === item.appt_id,
+          (q: any) => q.appt_id === item.appt_id
         );
 
         // index-based position
         const myIndex = activeQueue.findIndex(
-          (q: any) => q.appt_id === item.appt_id,
+          (q: any) => q.appt_id === item.appt_id
         );
 
         const myPosition = myIndex !== -1 ? myIndex + 1 : "N/A";
@@ -293,6 +399,7 @@ function Mainpage() {
           addVitals(item); // 👈 navigate to vitals page
         }
         if (result.dismiss) {
+          return;
         }
       } else {
         hideLoader();
@@ -304,15 +411,220 @@ function Mainpage() {
 
       toast.error("Something went wrong");
     } finally {
+      console.log("hello");
     }
   }
+
+  // o -- Helper Functions -- (T)
+
+  function formatTime(time: string) {
+    return time?.slice(0, 5); // 12:30:00 → 12:30
+  }
+
+  function getGender(gender: number) {
+    return gender === 1 ? "Male" : "Female";
+  }
+
+  function getAge(dob: string): string {
+    console.log("Date of Birth : ", dob);
+
+    const birthDate = new Date(dob);
+    const today = new Date();
+
+    let years = today.getFullYear() - birthDate.getFullYear();
+    let months = today.getMonth() - birthDate.getMonth();
+    let days = today.getDate() - birthDate.getDate();
+
+    // Adjust if days are negative
+    if (days < 0) {
+      months--;
+      const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+      days += prevMonth.getDate();
+    }
+
+    // Adjust if months are negative
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+
+    // 🎯 Return formatted result
+    if (years > 0) {
+      return `${years} Y`;
+    } else if (months > 0) {
+      return `${months} M`;
+    } else {
+      return `${days} D`;
+    }
+  }
+
+  function getDayNumber(): number {
+    const day = new Date().getDay();
+
+    // Convert: Sunday(0) → 7, Monday(1) → 1, ..., Saturday(6) → 6
+    return day === 0 ? 7 : day;
+  }
+
+  function getCurrentSlot(slots: string[]): string | null {
+    const now = new Date();
+
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    for (const time of slots) {
+      const [hours, minutes] = time.split(":").map(Number);
+      const slotMinutes = hours * 60 + minutes;
+
+      if (slotMinutes >= currentMinutes) {
+        return time; // ✅ first future slot
+      }
+    }
+
+    return null; // ❌ no future slot available
+  }
+
+  // o -- Helper Functions -- (B)
+
+  // @ -- Check In Patient -- (T)
+  async function checkInPatient(item: any) {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "Do you want to check in this appointment?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Check In",
+      cancelButtonText: "Cancel",
+      buttonsStyling: false,
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      // showLoader();
+      Swal.fire({
+        title: "Checking in...",
+        text: "Please wait",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
+      const res = await axios.post(
+        `${API_BASE_URL}/patient-web/check_in_patient`,
+        {
+          booking_id: item.appt_id,
+          user_map_id: JSON.parse(
+            localStorage.getItem("user_map_id") || "null"
+          ),
+        }
+      );
+
+      if (res.data.status) {
+        // await LoadPatentList(); // ✅ now works properly
+        const patient_mobile = localStorage.getItem("patient_mobile");
+        if (!patient_mobile) {
+          toast.error(
+            "Please re-enter your mobile number to view appointment status!"
+          );
+          return;
+        }
+        if (patient_mobile) {
+          // localStorage.setItem("patient_mobile", JSON.stringify(mobile));
+          getBookedPatient(patient_mobile);
+        }
+        const queueData = await getQueAndNumber();
+
+        const activeQueue = queueData.filter((q: any) => q.checked_in === 1);
+
+        // find current patient
+        const currentPatient = activeQueue.find(
+          (q: any) => q.appt_id === item.appt_id
+        );
+
+        // index-based position
+        const myIndex = activeQueue.findIndex(
+          (q: any) => q.appt_id === item.appt_id
+        );
+
+        const myPosition = myIndex !== -1 ? myIndex + 1 : "N/A";
+        const peopleAhead = myIndex !== -1 ? myIndex : 0;
+
+        // 🔥 NEW ALERT INSTEAD OF TOAST
+
+        const result = await Swal.fire({
+          html: `
+    <div style="text-align:center;">
+      
+      <h3 style="margin-bottom:10px;">Patient Checked In!</h3>
+
+      <p style="margin-bottom:15px;">Your Waiting Number is:</p>
+
+      <!-- BIG CIRCLE -->
+      <div style="
+        width:90px;
+        height:90px;
+        border-radius:50%;
+        background: linear-gradient(135deg, #4facfe, #00f2fe);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-size:28px;
+        color:white;
+        font-weight:bold;
+        margin: 0 auto 15px auto;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      ">
+        ${myPosition}
+      </div>
+
+      <div style="font-size:14px; color:#555; margin-bottom:10px;">
+        🧾 Token Number: <b>${currentPatient?.queue_number}</b><br/>
+        👥 People Ahead: <b>${peopleAhead}</b>
+      </div>
+
+      <p style="margin-top:10px;">Do you want to add vitals?</p>
+
+    </div>
+  `,
+          icon: "success",
+          showCancelButton: true,
+          confirmButtonText: "Add Vitals",
+          cancelButtonText: "Skip for now",
+          buttonsStyling: false,
+          customClass: {
+            confirmButton: "bg-green-500 text-white px-4 py-2 rounded-lg mr-2",
+            cancelButton: "bg-red-500 text-white px-4 py-2 rounded-lg",
+          },
+        });
+
+        if (result.isConfirmed) {
+          addVitals(item); // 👈 navigate to vitals page
+        }
+        if (result.dismiss) {
+          return;
+        }
+      } else {
+        hideLoader();
+        toast.error(res.data.message || "Check-in failed");
+      }
+    } catch (error) {
+      console.error(error);
+      hideLoader();
+
+      toast.error("Something went wrong");
+    } finally {
+      console.log("hello");
+    }
+  }
+
+  // @ -- Get Queue Number
   async function getQueAndNumber() {
     try {
       const res = await axios.post(
         `${API_BASE_URL}/patient-web/patient-queue`,
         {
           clinic_id: JSON.parse(localStorage.getItem("clinic_id") || "null"),
-        },
+        }
       );
 
       if (res.data.status) {
@@ -321,8 +633,8 @@ function Mainpage() {
         toast.error("Failed to fetch queue");
         return [];
       }
-    } catch (error) {
-      toast.error("Something went wrong");
+    } catch (error: any) {
+      toast.error("Something went wrong", error);
       return [];
     }
   }
@@ -500,40 +812,53 @@ function Mainpage() {
 
           {/* ===========  Patient List ============ */}
           {unBookedAllPatients.length > 0 && (
-            <div className="w-[90%] max-w-md bg-white rounded-2xl shadow-lg p-4 mt-6 bg-[rgb(198_219_232)]">
+            <div className="w-[90%] max-w-md bg-white rounded-2xl shadow-lg p-4 mt-6 bg-[#acbcc1] mb-6">
               <h3 className="text-gray-600 font-bold mb-3 ">Patient List</h3>
 
               {unBookedAllPatients.map((item: any, index: any) => (
                 <div
                   key={index}
-                  onClick={() => {
-                    console.log("Selected Patient:", item);
-                  }}
+                  // onClick={() => {
+                  //   console.log("Selected Patient:", item);
+                  // }}
                   className="flex items-center justify-between border rounded-xl p-3 mb-3 shadow-md bg-white cursor-pointer hover:bg-gray-50 transition"
                 >
                   {/* LEFT */}
-                  <div className="flex items-center gap-3">
-                    {/* Avatar */}
-                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                      {item.gender === 1 ? (
-                        <img src={male_icon} alt="" />
-                      ) : (
-                        <img src={female_icon} alt="" />
-                      )}
+                  <div className="flex items-center justify-between w-full">
+                    {/* LEFT SIDE */}
+                    <div className="flex items-center gap-3">
+                      {/* Avatar */}
+                      <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                        {item.gender === 1 ? (
+                          <img src={male_icon} alt="" />
+                        ) : (
+                          <img src={female_icon} alt="" />
+                        )}
+                      </div>
+
+                      {/* Info */}
+                      <div>
+                        <h4 className="font-semibold text-gray-800 capitalize">
+                          {item.patient_name}
+                        </h4>
+
+                        <p className="text-sm text-gray-500">
+                          {getGender(item.gender)} {item.age ? item.age : ""}
+                        </p>
+
+                        <p className="text-xs text-gray-400">
+                          {item.mobile_no}
+                        </p>
+                      </div>
                     </div>
 
-                    {/* Info */}
-                    <div>
-                      <h4 className="font-semibold text-gray-800 capitalize">
-                        {item.patient_name}
-                      </h4>
-
-                      <p className="text-sm text-gray-500">
-                        {getGender(item.gender)} {item.age ? item.age : ""}
-                      </p>
-
-                      <p className="text-xs text-gray-400">{item.mobile_no}</p>
-                    </div>
+                    {/* RIGHT BUTTON */}
+                    <button
+                      className="bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap"
+                      onClick={() => bookAndCheckIn(item)}
+                    >
+                      Book Appt.
+                    </button>
                   </div>
                 </div>
               ))}

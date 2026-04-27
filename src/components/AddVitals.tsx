@@ -81,11 +81,11 @@ function AddVitals({}: Props) {
 
     try {
       const symRes = await axios.get(
-        `${STAGING_BASE_URL}/patient/dashboard/booking-symptoms/${doctor_id}/${booking_id}`,
+        `${STAGING_BASE_URL}/patient/dashboard/booking-symptoms/${doctor_id}/${booking_id}`
       );
 
       const vitRes = await axios.get(
-        `${STAGING_V3_URL}/establishments/users/${user_map_id}/assistant/vital/${booking_id}`,
+        `${STAGING_V3_URL}/establishments/users/${user_map_id}/assistant/vital/${booking_id}`
       );
 
       // ✅ STORE
@@ -161,7 +161,7 @@ function AddVitals({}: Props) {
         const symptoms_response = await axios.post(
           `${STAGING_BASE_URL}/patient/dashboard/booking-symptoms-bulk`,
           symptomsApiPayload,
-          config,
+          config
         );
 
         if (symptoms_response.data.status === true) {
@@ -190,7 +190,7 @@ function AddVitals({}: Props) {
         const vital_resonse = await axios.post(
           `${STAGING_V3_URL}/establishments/users/${commonPayload.user_map_id}/assistant/vital/add`,
           vitalsApiPayload,
-          config,
+          config
         );
 
         if (vital_resonse.data.status === true) {
@@ -209,7 +209,7 @@ function AddVitals({}: Props) {
   }
   function getValidVitals(vitalsPayload: any[]) {
     return vitalsPayload.filter(
-      (v) => v.value !== "" && v.value !== null && v.value !== undefined,
+      (v) => v.value !== "" && v.value !== null && v.value !== undefined
     );
   }
   function getValidSymptoms(symptomsPayload: any[]) {
@@ -361,7 +361,9 @@ function AddVitals({}: Props) {
 
                       try {
                         parsedData = JSON.parse(item.data);
-                      } catch {}
+                      } catch {
+                        console.log("error");
+                      }
 
                       return (
                         <div
@@ -556,7 +558,7 @@ function AddVitals({}: Props) {
                   >
                     {item}
                   </button>
-                ),
+                )
               )}
             </div>
 
