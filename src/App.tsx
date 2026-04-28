@@ -4,6 +4,7 @@ import { API_BASE_URL, WEB_HOST_URL } from "./config/apis";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
+import jsPDF from "jspdf";
 // import { useLoader } from "./context/LoaderContext";
 import Loader from "./components/Loader";
 import { QRCodeCanvas } from "qrcode.react";
@@ -14,11 +15,6 @@ function App() {
   const [selectedClinic, setSelectedClinic] = useState<any>(null);
 
   const navigate = useNavigate();
-
-  useEffect(() => {
-    getAllClinics();
-  }, []);
-
   function getAllClinics() {
     axios
       .get(`${API_BASE_URL}/patient-web/clinic_list`)
@@ -27,6 +23,9 @@ function App() {
       })
       .catch((err) => console.error(err));
   }
+  useEffect(() => {
+    getAllClinics();
+  }, []);
 
   function handleSelect(e: any) {
     const clinicId = Number(e.target.value);
@@ -41,6 +40,48 @@ function App() {
       navigate(`/mainpage/${selectedClinic.id}`);
     }
   }
+
+  // y -- Function to download PDF --
+  const handleDownloadPDF = () => {
+    if (!selectedClinic || !qrUrl) return;
+
+    const doc = new jsPDF("p", "mm", "a4");
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // ---- Clinic Name (Centered) ----
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.text(selectedClinic.clinic_name, pageWidth / 2, 40, {
+      align: "center",
+    });
+
+    // ---- QR Code ----
+    const canvas = document.querySelector("canvas");
+    if (canvas) {
+      const imgData = canvas.toDataURL("image/png");
+
+      const qrSize = 100; // BIG QR
+      const x = (pageWidth - qrSize) / 2;
+
+      doc.addImage(imgData, "PNG", x, 60, qrSize, qrSize);
+    }
+
+    // ---- Link (Centered) ----
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+
+    const splitLink = doc.splitTextToSize(qrUrl, pageWidth - 40);
+
+    doc.text(splitLink, pageWidth / 2, 180, {
+      align: "center",
+    });
+
+    // ---- Save ----
+    doc.save(`${selectedClinic.clinic_name}.pdf`);
+  };
+  // y -- Function to download PDF --
+
   const qrUrl = selectedClinicId
     ? `${WEB_HOST_URL}/mainpage/${selectedClinicId}`
     : "";
@@ -104,6 +145,14 @@ function App() {
                   <p className="text-xs mt-2 text-gray-500 break-all">
                     {qrUrl}
                   </p>
+                  {/* download button */}
+                  <button
+                    className=" download-btn flex align-center justify-center  w-[100%] p-2 rounded-2xl"
+                    onClick={handleDownloadPDF}
+                  >
+                    Download PDF
+                  </button>
+                  {/* download button */}
                 </div>
               )}
             </div>

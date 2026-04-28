@@ -103,3 +103,12 @@ body {
     height: 200px;
   }
 }
+
+.download-btn {
+  background-image: linear-gradient(
+    45deg,
+    rgb(161, 170, 252),
+    rgb(75, 82, 180)
+  );
+  border: 1.2px solid rgb(12, 3, 131);
+}
