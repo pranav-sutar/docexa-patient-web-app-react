@@ -42,7 +42,7 @@ function App() {
     }
   }
   const qrUrl = selectedClinicId
-    ? `http://192.168.1.72:3000/mainpage/${selectedClinicId}`
+    ? `http://192.168.1.87:3000/mainpage/${selectedClinicId}`
     : "";
 
   return (
