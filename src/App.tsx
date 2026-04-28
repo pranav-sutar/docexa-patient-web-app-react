@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import "./App.css";
-import { API_BASE_URL } from "./config/apis";
+import { API_BASE_URL, WEB_HOST_URL } from "./config/apis";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
@@ -42,7 +42,7 @@ function App() {
     }
   }
   const qrUrl = selectedClinicId
-    ? `http://192.168.1.87:3000/mainpage/${selectedClinicId}`
+    ? `${WEB_HOST_URL}/mainpage/${selectedClinicId}`
     : "";
 
   return (
