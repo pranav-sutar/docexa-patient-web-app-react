@@ -22,7 +22,8 @@ function Mainpage() {
   const [mobile, setMobile] = useState("");
   const { loading } = useLoader();
   const { showLoader, hideLoader } = useLoader();
-  const [unBookedAllPatients, setUnBookedAllPatients] = useState<any>([]);
+  // const [unBookedAllPatients, setUnBookedAllPatients] = useState<any>([]);
+  const { unBookedAllPatients, setUnBookedAllPatients } = useCache();
 
   // const [appointments, setAppointments] = useState<any[]>([]);
   const { appointments, setAppointments } = useCache();
@@ -122,43 +123,48 @@ function Mainpage() {
     }
   }
   // g -- Get Booked Patients
-  function getBookedPatient(mobile: any) {
-    showLoader();
+async function getBookedPatient(mobile: any) {
+  showLoader();
 
-    axios
-      .post(`${API_BASE_URL}/patient/dashboard/appointments`, {
+  try {
+    const res: any = await axios.post(
+      `${API_BASE_URL}/patient/dashboard/appointments`,
+      {
         patient_id: 0,
         app_id: JSON.parse(localStorage.getItem("app_id") || "null"),
         mobile_no: mobile,
-      })
-      .then((res: any) => {
-        console.log("Booked Patient Data:", res.data);
+      }
+    );
 
-        if (res.data.code === 200) {
-          const clinicId = Number(localStorage.getItem("clinic_id"));
-          const filteredData = (res.data.data || []).filter(
-            (item: any) => Number(item.clinic_id) === clinicId
-          );
-          setAppointments(filteredData);
-          console.log(res);
-          getAllPatients(mobile, filteredData);
-          if (res.data.message === "Data not found") {
-            toast.error("No appointments found for this mobile number");
-          }
-        } else {
-          toast.error("No appointments found");
-        }
-      })
-      .catch(() => {
-        toast.error("Something went wrong");
-      })
-      .finally(() => {
-        hideLoader();
-      });
+    console.log("Booked Patient Data:", res.data);
+
+    if (res.data.code === 200) {
+      const clinicId = Number(localStorage.getItem("clinic_id"));
+
+      const filteredData = (res.data.data || []).filter(
+        (item: any) => Number(item.clinic_id) === clinicId
+      );
+
+      setAppointments(filteredData);
+
+      // 🔥 WAIT for patients also
+      await getAllPatients(mobile, filteredData);
+
+      if (res.data.message === "Data not found") {
+        toast.error("No appointments found for this mobile number");
+      }
+    } else {
+      toast.error("No appointments found");
+    }
+  } catch (err) {
+    toast.error("Something went wrong");
+  } finally {
+    hideLoader(); // ✅ now runs after BOTH APIs
   }
+}
 
   // g -- Get All Patients
-  function getAllPatients(mobile: any, bookedAppointments: any[]) {
+  async function getAllPatients(mobile: any, bookedAppointments: any[]) {
     try {
       const app_id = localStorage.getItem("app_id");
       const doctor_id = localStorage.getItem("doctor_id");
@@ -818,16 +824,10 @@ function Mainpage() {
               {unBookedAllPatients.map((item: any, index: any) => (
                 <div
                   key={index}
-                  // onClick={() => {
-                  //   console.log("Selected Patient:", item);
-                  // }}
                   className="flex items-center justify-between border rounded-xl p-3 mb-3 shadow-md bg-white cursor-pointer hover:bg-gray-50 transition"
                 >
-                  {/* LEFT */}
                   <div className="flex items-center justify-between w-full">
-                    {/* LEFT SIDE */}
                     <div className="flex items-center gap-3">
-                      {/* Avatar */}
                       <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
                         {item.gender === 1 ? (
                           <img src={male_icon} alt="" />
@@ -836,7 +836,6 @@ function Mainpage() {
                         )}
                       </div>
 
-                      {/* Info */}
                       <div>
                         <h4 className="font-semibold text-gray-800 capitalize">
                           {item.patient_name}
@@ -852,7 +851,6 @@ function Mainpage() {
                       </div>
                     </div>
 
-                    {/* RIGHT BUTTON */}
                     <button
                       className="bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap"
                       onClick={() => bookAndCheckIn(item)}
