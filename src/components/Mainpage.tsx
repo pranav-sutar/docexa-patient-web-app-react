@@ -14,6 +14,7 @@ import female_icon from "../assets/icons/gender/female.png";
 import Swal from "sweetalert2";
 import { useCache } from "../context/CacheContext";
 import back_button from "../assets/icons/back-btn.png";
+import crear_icon from "../assets/icons/broom.png"
 
 function Mainpage() {
   const { id } = useParams();
@@ -33,6 +34,13 @@ function Mainpage() {
   );
 
   // y ===== Functions -- (T)
+
+  // g -- Reset User Details --
+  function resetLocalUserData(){
+    localStorage.removeItem('patient_mobile');
+    setMobile('');
+  }
+
   // g -- Get Clinic By ID and store data into Local Storage
   function getClinicById() {
     showLoader();
@@ -777,7 +785,13 @@ DirectCheckInPatient(patient_data);
             </div>
 
             {/* Queue */}
-            <div className="que-div flex items-center justify-end">
+            <div className="que-div flex items-center justify-between">
+              <div className="flex items-center justify-center gap-2 mt-5  font-medium">
+                <span  onClick={()=>{resetLocalUserData()}} className=" text-white px-2 py-1 rounded">
+                  <img src={crear_icon} alt="" className="w-[25px]" />
+                </span>
+                {/* <button onClick={getCurrentQueue}>View Queue</button> */}
+              </div>
               <div className="flex items-center justify-center gap-2 mt-5 text-blue-600 font-medium">
                 <span className="bg-blue-500 text-white px-2 py-1 rounded">
                   Q
