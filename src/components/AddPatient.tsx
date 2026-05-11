@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button } from "@mui/material";
+import { Button, colors } from "@mui/material";
 import {
   Phone,
   User,
@@ -193,6 +193,7 @@ mobile_no: String(formData.mobile),
                 src={back_button}
                 className="w-6 cursor-pointer"
                 alt=""
+                style={{color:'white'}}
               /></button>
             </div>
             <div className=" p-6 text-center">

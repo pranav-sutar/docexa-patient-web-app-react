@@ -19,7 +19,7 @@ import crear_icon from "../assets/icons/broom.png"
 function Mainpage() {
   const { id } = useParams();
   const [clinicData, setClinicData] = useState<any>(null);
-  const [isPatientInClinic, setIsPatientInClinic] = useState(false);
+  const [isPatientInClinic, setIsPatientInClinic] = useState(true);
   const [mobile, setMobile] = useState("");
   const { loading } = useLoader();
   const { showLoader, hideLoader } = useLoader();
@@ -746,7 +746,7 @@ DirectCheckInPatient(patient_data);
                 <span className="font-bold text-gray-500">
                   {isPatientInClinic ? "Yes" : "No"}
                 </span>
-                <Switch onChange={onToggleResponse} />
+                <Switch onChange={onToggleResponse} checked={isPatientInClinic} />
               </div>
             </div>
 
