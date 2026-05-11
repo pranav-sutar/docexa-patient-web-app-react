@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { Router, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { API_BASE_URL, STAGING_BASE_URL, STAGING_V3_URL } from "../config/apis";
@@ -91,6 +91,7 @@ function Mainpage() {
   function onToggleResponse(e: any) {
     console.log("Toggle State:", e.target.checked);
     setIsPatientInClinic(e.target.checked);
+    // localStorage.removeItem('patient_mobile');
     if (isPatientInClinic === false) {
       toast("welcome, you can now check in appointment!", {
         icon: "👏",
@@ -232,10 +233,26 @@ async function getBookedPatient(mobile: any) {
         .then((res) => {
           console.log(res);
           if (res.data.status == "success" && res.status == 200) {
+            // const patient_data = {
+            //   appt_id: res?.data?.data?.appointment_id,
+            // };
+            // DirectCheckInPatient(patient_data);
+
             const patient_data = {
-              appt_id: res?.data?.data?.appointment_id,
-            };
-            DirectCheckInPatient(patient_data);
+  appt_id: res?.data?.data?.appointment_id,
+  patient_id: item?.patient_id,
+  patient_name: item?.patient_name,
+  gender: item?.gender,
+  age: getAge(item?.dob),
+  mobile_no: item?.mobile_no,
+  checked_in: 1,
+  date: today,
+  start_time: currentSlot,
+  email_id: item?.email_id ?? null,
+};
+
+DirectCheckInPatient(patient_data);
+
             // toast("SuccessFully Booked Appointment...");
           } else {
             toast.error("Something Went Wrong...");
@@ -420,6 +437,11 @@ async function getBookedPatient(mobile: any) {
       console.log("hello");
     }
   }
+
+  // g -- Navigate To Create Patient Page:
+  function navigateNewPatient(){
+    navigate('/add-patient');
+  } 
 
   // o -- Helper Functions -- (T)
 
@@ -680,6 +702,17 @@ async function getBookedPatient(mobile: any) {
     getClinicById();
   }, [id]);
 
+  useEffect(() => {
+  const savedMobile = localStorage.getItem("patient_mobile");
+
+  if (savedMobile) {
+    setMobile(savedMobile);
+
+    // optional: auto load patient data again
+    getBookedPatient(savedMobile);
+  }
+}, []);
+
   return (
     <>
       {loading && <Loader />}
@@ -863,8 +896,38 @@ async function getBookedPatient(mobile: any) {
             </div>
           )}
 
+          {/* ============ Create Patient Options =========== */}
+
+<div className="main-create-patient w-[90%] max-w-md bg-white rounded-2xl shadow-lg p-4 mt-4 flex items-center justify-between mb-3">
+  
+  <div>
+    <h3 className="text-lg font-semibold text-gray-800">
+      Create New Patient
+    </h3>
+
+    <p className="text-sm text-gray-500">
+      Add patient and book appointment
+    </p>
+  </div>
+
+  <Button
+  onClick={()=>{navigateNewPatient()}}
+    variant="contained"
+    sx={{
+      minWidth: "50px",
+      width: "50px",
+      height: "50px",
+      borderRadius: "9999px",
+      fontSize: "24px",
+      background: "linear-gradient(to right, #3b82f6, #2563eb)",
+    }}
+  >
+    +
+  </Button>
+</div>
+
           {/* IMAGE */}
-          {appointments.length === 0 && (
+          {appointments.length === 0 && !unBookedAllPatients.length && (
             <div className="mt-10 flex justify-center">
               <img
                 src={doctors_team_image}
