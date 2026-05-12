@@ -7,6 +7,7 @@
 
 // y staging live url --
 const API_BASE_URL = "https://api-staging.docexa.com/api/v4";
+const LOCAL_HOST_URL = "http://localhost:8000/api/v4";
 const AUTH_BASE_URL = "https://api-staging.docexa.com/api/v4/auth";
 const STAGING_BASE_URL = "https://api-staging.docexa.com/api/v4";
 const STAGING_V3_URL = "https://api-staging.docexa.com/api/v3";
@@ -18,4 +19,5 @@ export {
   STAGING_BASE_URL,
   STAGING_V3_URL,
   WEB_HOST_URL,
+  LOCAL_HOST_URL
 };
