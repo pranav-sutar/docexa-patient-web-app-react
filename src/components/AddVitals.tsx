@@ -286,65 +286,7 @@ function AddVitals({}: Props) {
               <span>Age: {appointmentData?.age}</span>
             </div>
 
-            {/* 🔹 VITALS */}
-            <div className="w-[90%] max-w-md mt-6">
-              <h3 className="font-semibold text-lg mb-2">Vitals</h3>
-
-              {/* show previously selected vitals */}
-              {previosSelectedVitals?.length > 0 && (
-                <div className="w-[90%] max-w-md mt-4 mb-4">
-                  <h3 className="font-semibold text-sm text-gray-500 mb-2">
-                    Previously Added Vitals
-                  </h3>
-
-                  <div className="flex flex-wrap gap-2">
-                    {previosSelectedVitals.map((item: any) => (
-                      <div
-                        key={item.id}
-                        className="px-3 py-1 rounded-full bg-gray-300 text-gray-800 text-sm"
-                      >
-                        {item.vital_name} ({item.value})
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {/* show previously selected vitals */}
-
-              <div className="flex flex-wrap items-center gap-2">
-                {/* SELECTED VITALS */}
-                {Object.keys(selectedVitals).map((key) => (
-                  <div
-                    key={key}
-                    className="flex items-center gap-1 px-3 py-1 rounded-full bg-blue-600 text-white text-sm"
-                  >
-                    <span>
-                      {key} ({selectedVitals[key]})
-                    </span>
-
-                    <button
-                      onClick={() => {
-                        const updated = { ...selectedVitals };
-                        delete updated[key];
-                        setSelectedVitals(updated);
-                      }}
-                      className="text-xs"
-                    >
-                      ❌
-                    </button>
-                  </div>
-                ))}
-
-                {/* ADD BUTTON */}
-                <button
-                  onClick={() => setShowAllVitals(true)}
-                  className="flex items-center justify-center px-3 py-1 rounded-full bg-green-600 text-white text-sm"
-                >
-                  + Add
-                </button>
-              </div>
-            </div>
-
+{/* Symptoms */}
             <div className="symptoms-section w-[90%] max-w-md mt-6">
               <h3 className="font-semibold text-lg mb-2">Symptoms</h3>
 
@@ -411,6 +353,66 @@ function AddVitals({}: Props) {
                 </button>
               </div>
             </div>
+            {/* 🔹 VITALS */}
+            <div className="w-[90%] max-w-md mt-6">
+              <h3 className="font-semibold text-lg mb-2">Vitals</h3>
+
+              {/* show previously selected vitals */}
+              {previosSelectedVitals?.length > 0 && (
+                <div className="w-[90%] max-w-md mt-4 mb-4">
+                  <h3 className="font-semibold text-sm text-gray-500 mb-2">
+                    Previously Added Vitals
+                  </h3>
+
+                  <div className="flex flex-wrap gap-2">
+                    {previosSelectedVitals.map((item: any) => (
+                      <div
+                        key={item.id}
+                        className="px-3 py-1 rounded-full bg-gray-300 text-gray-800 text-sm"
+                      >
+                        {item.vital_name} ({item.value})
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* show previously selected vitals */}
+
+              <div className="flex flex-wrap items-center gap-2">
+                {/* SELECTED VITALS */}
+                {Object.keys(selectedVitals).map((key) => (
+                  <div
+                    key={key}
+                    className="flex items-center gap-1 px-3 py-1 rounded-full bg-blue-600 text-white text-sm"
+                  >
+                    <span>
+                      {key} ({selectedVitals[key]})
+                    </span>
+
+                    <button
+                      onClick={() => {
+                        const updated = { ...selectedVitals };
+                        delete updated[key];
+                        setSelectedVitals(updated);
+                      }}
+                      className="text-xs"
+                    >
+                      ❌
+                    </button>
+                  </div>
+                ))}
+
+                {/* ADD BUTTON */}
+                <button
+                  onClick={() => setShowAllVitals(true)}
+                  className="flex items-center justify-center px-3 py-1 rounded-full bg-green-600 text-white text-sm"
+                >
+                  + Add
+                </button>
+              </div>
+            </div>
+
+
 
             {/* 🔹 SUBMIT */}
             <button
