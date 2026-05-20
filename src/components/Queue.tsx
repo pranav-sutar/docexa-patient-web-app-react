@@ -81,22 +81,29 @@ function Queue() {
 
         <div className="min-h-[90vh] bg-gray-100 flex flex-col items-center">
           {/* HEADER */}
-          <div className="w-full bg-blue-200 rounded-b-[60px] pt-10 p-6 text-center">
-            <div className="backbtn ">
-              <img
-                src={back_button}
-                onClick={() => {
-                  navigate(-1);
-                }}
-                className="w-6"
-                alt=""
-              />
-            </div>
-            <span className="text-gray-600">Welcome to</span>
-            <h2 className="text-3xl font-bold text-gray-800">
-              {clinicName || "Clinic"}
-            </h2>
-          </div>
+<div className="w-full bg-blue-200 rounded-b-[60px] pt-5 p-6 text-center relative flex items-center justify-center">
+  
+  {/* Back Button */}
+  <div className="absolute left-6 top-1/2 -translate-y-1/2">
+    <img
+      src={back_button}
+      onClick={() => {
+        navigate(-1);
+      }}
+      className="w-6 cursor-pointer"
+      alt=""
+    />
+  </div>
+
+  {/* Center Content */}
+  <div className="flex flex-col items-center justify-center">
+    <span className="text-gray-600">Welcome to</span>
+
+    <h2 className="text-3xl font-bold text-gray-800">
+      {clinicName || "Clinic"}
+    </h2>
+  </div>
+</div>
           {!loading && queueData.length === 0 && (
             <p className="mt-6 text-gray-500">No queue available</p>
           )}

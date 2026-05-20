@@ -730,7 +730,7 @@ DirectCheckInPatient(patient_data);
         <div className="min-h-[90vh] bg-gray-100  flex flex-col items-center">
           {/* HEADER */}
 
-          <div className="w-full bg-blue-200 rounded-b-[60px] pt-10 p-6 text-center relative">
+          <div className="w-full bg-blue-200 rounded-b-[60px] pt-5 p-6 text-center relative">
             <span className="text-gray-600">Welcome to</span>
             <h2 className="text-3xl font-bold text-gray-800">
               {clinicData?.clinic_name || "Clinic"}
