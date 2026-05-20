@@ -38,6 +38,7 @@ function Mainpage() {
   // g -- Reset User Details --
   function resetLocalUserData(){
     localStorage.removeItem('patient_mobile');
+    window.location.reload();
     setMobile('');
   }
 
