@@ -9,10 +9,10 @@ export default function Footer({ clinicData }: FooterProps) {
       {/* Clinic Info */}
       <div>
         <h3 className="font-semibold text-lg">
-          {clinicData?.clinic_name || "Clinic Name"}
+          {clinicData?.clinic_name || String(localStorage.getItem('clinic_name'))}
         </h3>
         <p className="text-sm text-gray-300 px-4">
-          {clinicData?.address || "Clinic address here"}
+          {clinicData?.address || ''}
         </p>
       </div>
 
