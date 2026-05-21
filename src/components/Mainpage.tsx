@@ -16,6 +16,25 @@ import { useCache } from "../context/CacheContext";
 import back_button from "../assets/icons/back-btn.png";
 import crear_icon from "../assets/icons/broom.png"
 
+// y -- avatars -- (T)
+// Male
+import age_0_3 from "../assets/icons/avatars/age_0_3.png";
+import age_3_5_male from "../assets/icons/avatars/age_3_5_male.png";
+import age_5_10_male from "../assets/icons/avatars/age_5_10_male.png";
+import age_10_18_male from "../assets/icons/avatars/age_10_18_male.png";
+import age_18_30_male from "../assets/icons/avatars/age_18_30_male.png";
+import age_30_50_male from "../assets/icons/avatars/age_30_50_male.png";
+import age_50_male from "../assets/icons/avatars/age_50_male.png";
+
+// Female
+import age_3_5_female from "../assets/icons/avatars/age_3_5_female.png";
+import age_5_10_female from "../assets/icons/avatars/age_5_10_female.png";
+import age_10_18_female from "../assets/icons/avatars/age_10_18_female.png";
+import age_18_30_female from "../assets/icons/avatars/age_18_30_female.png";
+import age_30_50_female from "../assets/icons/avatars/age_30_50_female.png";
+import age_50_female from "../assets/icons/avatars/age_50_female.png";
+// y -- avatars -- (B)
+
 function Mainpage() {
   const { id } = useParams();
   const [clinicData, setClinicData] = useState<any>(null);
@@ -34,6 +53,88 @@ function Mainpage() {
   );
 
   // y ===== Functions -- (T)
+
+  // y Get Icons -- (T)
+function getAvatarIcon(age: any, gender: any) {
+
+  const normalizedGender =
+    Number(gender) === 1 ? 1 : 2;
+
+  // Default
+  if (!age) {
+    return normalizedGender === 1
+      ? age_18_30_male
+      : age_18_30_female;
+  }
+
+  const ageString = String(age).trim();
+
+  let numericAge = 0;
+
+  // Years
+  if (ageString.endsWith("Y")) {
+    numericAge = parseInt(ageString);
+  }
+
+  // Months
+  else if (ageString.endsWith("M")) {
+    numericAge = 0;
+  }
+
+  // Days
+  else if (ageString.endsWith("D")) {
+    numericAge = 0;
+  }
+
+  console.log("AGE:", ageString);
+  console.log("NUMERIC AGE:", numericAge);
+
+  // 0-3
+  if (numericAge <= 3) {
+    return age_0_3;
+  }
+
+  // 4-5
+  if (numericAge <= 5) {
+    return normalizedGender === 1
+      ? age_3_5_male
+      : age_3_5_female;
+  }
+
+  // 6-10
+  if (numericAge <= 10) {
+    return normalizedGender === 1
+      ? age_5_10_male
+      : age_5_10_female;
+  }
+
+  // 11-18
+  if (numericAge <= 18) {
+    return normalizedGender === 1
+      ? age_10_18_male
+      : age_10_18_female;
+  }
+
+  // 19-30
+  if (numericAge <= 30) {
+    return normalizedGender === 1
+      ? age_18_30_male
+      : age_18_30_female;
+  }
+
+  // 31-50
+  if (numericAge <= 50) {
+    return normalizedGender === 1
+      ? age_30_50_male
+      : age_30_50_female;
+  }
+
+  // 50+
+  return normalizedGender === 1
+    ? age_50_male
+    : age_50_female;
+}
+  // y Get Icons -- (B)
 
   // g -- Reset User Details --
   function resetLocalUserData(){
@@ -815,12 +916,12 @@ DirectCheckInPatient(patient_data);
                   {/* LEFT */}
                   <div className="flex items-center gap-3">
                     {/* Avatar */}
-                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                      {item.gender === 1 ? (
-                        <img src={male_icon} alt="" />
-                      ) : (
-                        <img src={female_icon} alt="" />
-                      )}
+                    <div className="w-10 h-10 bg-gray-200 rounded-full overflow-hidden flex items-center justify-center">
+                      <img
+  src={getAvatarIcon(item.age, item.gender)}
+  alt=""
+  className="w-full h-full object-cover rounded-full"
+/>
                     </div>
 
                     {/* Info */}
@@ -876,13 +977,13 @@ DirectCheckInPatient(patient_data);
                 >
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                        {item.gender === 1 ? (
-                          <img src={male_icon} alt="" />
-                        ) : (
-                          <img src={female_icon} alt="" />
-                        )}
-                      </div>
+                       <div className="w-10 h-10 bg-gray-200 rounded-full overflow-hidden flex items-center justify-center">
+                      <img
+  src={getAvatarIcon(getAge(item.dob), item.gender)}
+  alt=""
+  className="w-full h-full object-cover rounded-full"
+/>
+                    </div>
 
                       <div>
                         <h4 className="font-semibold text-gray-800 capitalize">
