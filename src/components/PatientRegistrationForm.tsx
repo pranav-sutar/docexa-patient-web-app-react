@@ -7,6 +7,8 @@ import {
   FaRulerVertical,
 } from "react-icons/fa";
 
+import logo from "../assets/pngs/gst_logo.jpeg";
+
 function PatientRegistrationForm() {
   const [formData, setFormData] = useState({
     firstName: "",
@@ -147,7 +149,7 @@ function PatientRegistrationForm() {
             }}
           >
             <img
-              src="https://www.globalspace.in/images/logo.png"
+              src={logo}
               alt="Globalspace"
               style={{
                 height: "50px",
