@@ -10,6 +10,7 @@ import { CacheProvider } from "./context/CacheContext.tsx";
 import AddVitals from "./components/AddVitals.tsx";
 import AddPatient from "./components/AddPatient.tsx";
 import DoctorSideApiTest from "./support_components/DoctorSideApiTest.tsx";
+import PatientRegistrationForm from "./components/PatientRegistrationForm.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <CacheProvider>
@@ -23,6 +24,7 @@ createRoot(document.getElementById("root")!).render(
           <Route path="/add-patient" element={<AddPatient />} />
           <Route path="/add-patient" element={<AddPatient />} />
           <Route path="/doctor-api-test" element={<DoctorSideApiTest />} />
+          <Route path="/form" element={<PatientRegistrationForm />} />
         </Routes>
       </BrowserRouter>
     </LoaderProvider>
